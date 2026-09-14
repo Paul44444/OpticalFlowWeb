@@ -2,6 +2,16 @@ import type { ComputeSettings, JobResult } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+function resolveResultUrls(job: JobResult): JobResult {
+  if (!job.results || !API_BASE) return job;
+  return {
+    ...job,
+    results: Object.fromEntries(
+      Object.entries(job.results).map(([name, url]) => [name, new URL(url, API_BASE).toString()]),
+    ),
+  };
+}
+
 export async function createJob(files: File[], settings: ComputeSettings): Promise<JobResult> {
   const body = new FormData();
   body.append("image1", files[0]);
@@ -9,12 +19,11 @@ export async function createJob(files: File[], settings: ComputeSettings): Promi
   body.append("settings", JSON.stringify(settings));
   const response = await fetch(`${API_BASE}/api/jobs`, { method: "POST", body });
   if (!response.ok) throw new Error(await response.text() || "Could not create job");
-  return response.json();
+  return resolveResultUrls(await response.json());
 }
 
 export async function getJob(id: string): Promise<JobResult> {
   const response = await fetch(`${API_BASE}/api/jobs/${id}`);
   if (!response.ok) throw new Error(await response.text() || "Could not read job");
-  return response.json();
+  return resolveResultUrls(await response.json());
 }
-

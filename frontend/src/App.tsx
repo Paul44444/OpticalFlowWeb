@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, ArrowRight, Check, ChevronDown, Download, Gauge, ImagePlus,
-  Layers3, LoaderCircle, Maximize2, Play, RefreshCw, Settings2, Sparkles, X
+  LoaderCircle, Maximize2, Play, RefreshCw, Settings2, X
 } from "lucide-react";
 import { createJob, getJob } from "./api";
-import type { ComputeSettings, InputImage, JobResult, JobStatus, Quality, Solver } from "./types";
+import type { ComputeSettings, InputImage, JobResult, Quality, Solver } from "./types";
 
 const defaultSettings: ComputeSettings = {
   solver: "both", quality: "quick", size: 192, levels: 3, warps: 4,
@@ -141,20 +141,20 @@ function App() {
 
   return <div className="app-shell">
     <header className="topbar">
-      <a className="brand" href="#"><span className="brand-mark">H</span><span>HEWER <em>FLOW STUDIO</em></span></a>
-      <div className="system-status"><span className="status-dot" /> Local worker <strong>configured</strong></div>
+      <a className="brand" href="#"><span className="brand-mark">HF</span><span>HEWER <em>OPTICAL FLOW</em></span></a>
+      <div className="system-status"><span className="status-dot" /> Compute backend <strong>online</strong></div>
     </header>
 
     <main>
       <section className="hero">
-        <div><span className="section-index">01 / INPUT</span><h1>See how the surface <i>moves.</i></h1>
-          <p>Dense optical flow and strain analysis for experimental image pairs.</p></div>
-        <div className="hero-stat"><Gauge size={20} /><span>TV · TGV</span><strong>PDHG solver</strong></div>
+        <div><span className="section-index">ANALYSIS WORKSPACE</span><h1>Optical flow and strain estimation</h1>
+          <p>Variational displacement-field reconstruction from experimental image pairs.</p></div>
+        <div className="hero-stat"><Gauge size={20} /><span>NUMERICAL METHOD</span><strong>TV / TGV · PDHG</strong></div>
       </section>
 
       <section className="workspace-grid">
         <div className="input-panel panel">
-          <div className="panel-heading"><div><span>IMAGE PAIR</span><h2>Frames</h2></div><span className="counter">{Object.keys(images).length}/2</span></div>
+          <div className="panel-heading"><div><span>INPUT DATA</span><h2>Image pair</h2></div><span className="counter">{Object.keys(images).length}/2</span></div>
           <div className="drop-grid">
             <DropCard role="reference" image={images.reference} onFile={(f) => setImage("reference", f)} onRemove={() => setImages((v) => ({ ...v, reference: undefined }))} />
             <div className="flow-arrow"><ArrowRight size={20} /></div>
@@ -163,7 +163,7 @@ function App() {
         </div>
 
         <aside className="controls panel">
-          <div className="panel-heading"><div><span>COMPUTE</span><h2>Method</h2></div><Settings2 size={19} /></div>
+          <div className="panel-heading"><div><span>CONFIGURATION</span><h2>Solver parameters</h2></div><Settings2 size={19} /></div>
           <label>Solver</label>
           <Segmented<Solver> value={settings.solver} options={[{value:"tv",label:"TV"},{value:"tgv",label:"TGV"},{value:"both",label:"Both"}]}
             onChange={(solver) => setSettings((v) => ({ ...v, solver }))} />
@@ -189,7 +189,7 @@ function App() {
       </section>
 
       <section className="results-section">
-        <div className="results-heading"><div><span className="section-index">02 / RESULTS</span><h2>Computed fields</h2></div>
+        <div className="results-heading"><div><span className="section-index">OUTPUT DATA</span><h2>Computed fields</h2></div>
           {job.status === "complete" && <a className="download-link" href={results.download}><Download size={16}/> Download data</a>}</div>
         <nav className="result-tabs">{resultTabs.map((item) => <button key={item} onClick={() => setTab(item)} className={tab === item ? "active" : ""}>{item}</button>)}</nav>
         {tab === "Diagnostics" ? <div className="diagnostics panel">
@@ -200,7 +200,7 @@ function App() {
         </div>}
       </section>
     </main>
-    <footer><span>HEWER LAB / OPTICAL FLOW INSTRUMENT</span><span>LOCAL COMPUTE · PRIVATE DATA</span></footer>
+    <footer><span>HEWER · VARIATIONAL OPTICAL FLOW</span><span>LOCAL COMPUTE NODE · TV / TGV</span></footer>
   </div>;
 }
 

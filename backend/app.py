@@ -60,7 +60,11 @@ def run_job(job_id: str, image1: Path, image2: Path, settings: dict[str, Any]) -
     update_job(job_id, status="queued", progress=10, stage="Waiting for local compute")
     try:
         with compute_lock:
-            update_job(job_id, status="running", progress=20, stage="Computing TV / TGV fields")
+            import torch
+
+            compute_device = "cuda" if torch.cuda.is_available() else "cpu"
+            update_job(job_id, status="running", progress=20,
+                       stage=f"Computing TV / TGV fields on {compute_device.upper()}", device=compute_device)
             command = [
                 sys.executable, str(HEWER_ROOT / "compare_tv_tgv.py"),
                 "--image1", str(image1), "--image2", str(image2),
@@ -71,6 +75,7 @@ def run_job(job_id: str, image1: Path, image2: Path, settings: dict[str, Any]) -
                 "--iterations", str(int(settings.get("iterations", 500))),
                 "--alpha1", str(float(settings.get("alpha1", 0.003))),
                 "--tgv-alpha2", str(float(settings.get("alpha2", 0.006))),
+                "--device", compute_device,
             ]
             if not settings.get("phaseInit", True):
                 command.append("--no-phase-init")
@@ -95,7 +100,11 @@ def run_job(job_id: str, image1: Path, image2: Path, settings: dict[str, Any]) -
 
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    import torch
+
+    available = torch.cuda.is_available()
+    return {"status": "ok", "device": "cuda" if available else "cpu",
+            "gpu_name": torch.cuda.get_device_name(0) if available else ""}
 
 
 @app.post("/api/jobs", status_code=202)
@@ -135,4 +144,3 @@ def get_job(job_id: str) -> dict[str, Any]:
         if job is None:
             raise HTTPException(404, "Unknown job")
         return dict(job)
-

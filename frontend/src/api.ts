@@ -2,6 +2,12 @@ import type { ComputeSettings, JobResult } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+export async function getHealth(): Promise<{ status: string; device: "cuda" | "cpu"; gpu_name: string }> {
+  const response = await fetch(`${API_BASE}/api/health`);
+  if (!response.ok) throw new Error("Backend unavailable");
+  return response.json();
+}
+
 function resolveResultUrls(job: JobResult): JobResult {
   if (!job.results || !API_BASE) return job;
   return {

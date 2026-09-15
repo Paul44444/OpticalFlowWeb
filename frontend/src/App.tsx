@@ -3,7 +3,7 @@ import {
   Activity, ArrowRight, Check, ChevronDown, Download, Gauge, ImagePlus,
   LoaderCircle, Maximize2, Play, RefreshCw, Settings2, X
 } from "lucide-react";
-import { createJob, getJob } from "./api";
+import { createJob, getHealth, getJob } from "./api";
 import type { ComputeSettings, InputImage, JobResult, Quality, Solver } from "./types";
 
 const defaultSettings: ComputeSettings = {
@@ -80,6 +80,18 @@ function Segmented<T extends string>({ value, options, onChange }: {
       onClick={() => onChange(option.value)}>{option.label}</button>)}</div>;
 }
 
+function ParameterSlider({ label, detail, value, min, max, step, onChange }: {
+  label: string; detail: string; value: number; min: number; max: number; step: number;
+  onChange: (value: number) => void;
+}) {
+  return <label className="parameter-slider">
+    <span className="slider-heading"><span>{label}<small>{detail}</small></span><output>{value.toFixed(step < 1 ? 4 : 0)}</output></span>
+    <input type="range" min={min} max={max} step={step} value={value}
+      onChange={(event) => onChange(Number(event.target.value))} />
+    <span className="slider-scale"><span>{min}</span><span>{max}</span></span>
+  </label>;
+}
+
 const resultTabs = ["Overview", "Flow", "Strain", "Diagnostics"] as const;
 type ResultTab = typeof resultTabs[number];
 
@@ -97,6 +109,11 @@ function App() {
   const [advanced, setAdvanced] = useState(false);
   const [job, setJob] = useState<JobResult>({ id: "", status: "idle", progress: 0, stage: "Ready" });
   const [tab, setTab] = useState<ResultTab>("Overview");
+  const [backend, setBackend] = useState<{ device: "cuda" | "cpu"; gpu_name: string } | null>(null);
+
+  useEffect(() => {
+    getHealth().then(({ device, gpu_name }) => setBackend({ device, gpu_name })).catch(() => setBackend(null));
+  }, []);
 
   const filesReady = Boolean(images.reference && images.deformed);
   const busy = ["uploading", "queued", "running"].includes(job.status);
@@ -163,7 +180,7 @@ function App() {
   return <div className="app-shell">
     <header className="topbar">
       <a className="brand" href="#"><span className="brand-mark">HF</span><span>HEWER <em>OPTICAL FLOW</em></span></a>
-      <div className="system-status"><span className="status-dot" /> Compute backend <strong>online</strong></div>
+      <div className="system-status"><span className={`status-dot ${backend ? "" : "offline"}`} /> Compute backend <strong>{backend ? `${backend.device.toUpperCase()}${backend.gpu_name ? ` · ${backend.gpu_name}` : ""}` : "offline"}</strong></div>
     </header>
 
     <main>
@@ -202,9 +219,18 @@ function App() {
           <label>Quality</label>
           <Segmented<Quality> value={settings.quality} options={[{value:"quick",label:"Quick"},{value:"precise",label:"Precise"},{value:"custom",label:"Custom"}]}
             onChange={setQuality} />
+          <div className="slider-group">
+            <span className="slider-group-title">REGULARIZATION / CONVERGENCE</span>
+            <ParameterSlider label="TV weight · α₁" detail="TV + TGV first order" value={settings.alpha1} min={0.0005} max={0.02} step={0.0005}
+              onChange={(alpha1) => setSettings((v) => ({ ...v, quality: "custom", alpha1 }))} />
+            {(settings.solver === "tgv" || settings.solver === "both") && <ParameterSlider label="TGV weight · α₂" detail="TGV second order" value={settings.alpha2} min={0.001} max={0.03} step={0.001}
+              onChange={(alpha2) => setSettings((v) => ({ ...v, quality: "custom", alpha2 }))} />}
+            <ParameterSlider label="PDHG iterations" detail="Per warp / pyramid level" value={settings.iterations} min={100} max={1000} step={50}
+              onChange={(iterations) => setSettings((v) => ({ ...v, quality: "custom", iterations }))} />
+          </div>
           <button className="advanced-toggle" onClick={() => setAdvanced((v) => !v)}><span>Advanced parameters</span><ChevronDown size={16} className={advanced ? "rotated" : ""} /></button>
           {advanced && <div className="advanced-grid">
-            {(["size","levels","warps","iterations","alpha1","alpha2"] as const).map((key) => <label key={key}><span>{key}</span><input type="number" step={key.startsWith("alpha") ? "0.001" : "1"} value={settings[key]}
+            {(["size","levels","warps"] as const).map((key) => <label key={key}><span>{key}</span><input type="number" step="1" value={settings[key]}
               onChange={(e) => setSettings((v) => ({ ...v, quality: "custom", [key]: Number(e.target.value) }))} /></label>)}
             <label className="check-row"><input type="checkbox" checked={settings.phaseInit} onChange={(e) => setSettings((v) => ({...v, phaseInit:e.target.checked}))} /><span>Phase initialization</span></label>
           </div>}

@@ -35,8 +35,8 @@ export interface JobResult {
   status: JobStatus;
   progress: number;
   stage: string;
+  device?: "cuda" | "cpu";
   error?: string;
   results?: Record<string, string>;
   metrics?: Record<string, JobMetrics | Record<string, unknown>>;
 }
-

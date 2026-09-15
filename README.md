@@ -21,6 +21,10 @@ npm run dev
 
 Open `http://localhost:5173` and drop two images into the workbench.
 
+The backend uses CUDA for TV/TGV jobs when PyTorch detects an NVIDIA GPU;
+otherwise it runs on CPU. `/api/health` reports the selected device and GPU
+name. The compute CLI also accepts `--device auto|cuda|cpu` for direct runs.
+
 The built-in sample pair is derived from `regul/I1l.png` and `regul/I2l.png`.
 Both images use the identical pixel crop `x=144:513, y=59:427`; only the
 Matplotlib figure margins and axis annotations are removed. The original

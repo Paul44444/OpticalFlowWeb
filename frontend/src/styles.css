@@ -32,6 +32,7 @@ button { color: inherit; }
 .system-status { font: 10px "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 7px; }
 .system-status strong { color: var(--muted); font-weight: 400; }
 .status-dot { width: 7px; height: 7px; background: #5fbb52; border-radius: 50%; box-shadow: 0 0 0 4px rgba(95,187,82,.13); }
+.status-dot.offline { background: #a5b2bc; box-shadow: none; }
 
 main { width: min(1440px, calc(100% - 40px)); margin: 0 auto; }
 .hero { min-height: 230px; display: flex; align-items: flex-end; justify-content: space-between; padding: 48px 0 38px; border-bottom: 1px solid var(--line); }
@@ -86,6 +87,15 @@ main { width: min(1440px, calc(100% - 40px)); margin: 0 auto; }
 .segmented { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: 1px solid var(--line); padding: 3px; }
 .segmented button { border: 0; padding: 10px 7px; background: transparent; cursor: pointer; font: 11px "IBM Plex Mono", monospace; }
 .segmented button.active { background: var(--signal-dark); color: white; }
+.slider-group { margin-top: 23px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 17px; }
+.slider-group-title { font: 500 10px "IBM Plex Mono", monospace; letter-spacing: .08em; color: var(--muted); }
+.parameter-slider { display: block; }
+.slider-heading { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.slider-heading > span { display: grid; gap: 3px; font-size: 12px; font-weight: 600; }
+.slider-heading small { font-size: 10px; font-weight: 400; color: var(--muted); }
+.slider-heading output { min-width: 62px; text-align: right; font: 500 12px "IBM Plex Mono", monospace; color: var(--signal-dark); }
+.parameter-slider input { width: 100%; margin: 12px 0 4px; accent-color: var(--signal); cursor: pointer; }
+.slider-scale { display: flex; justify-content: space-between; color: var(--muted); font: 9px "IBM Plex Mono", monospace; }
 .advanced-toggle { width: 100%; border: 0; border-top: 1px solid var(--line); margin-top: 23px; padding: 16px 0 4px; background: transparent; display: flex; justify-content: space-between; cursor: pointer; font-size: 12px; }
 .advanced-toggle svg { transition: transform .2s; }.advanced-toggle svg.rotated { transform: rotate(180deg); }
 .advanced-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 14px; }

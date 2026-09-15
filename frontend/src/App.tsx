@@ -16,13 +16,19 @@ const qualitySettings: Record<Exclude<Quality, "custom">, Partial<ComputeSetting
   precise: { size: 384, levels: 4, warps: 5, iterations: 800 }
 };
 
+const samples = {
+  reference: { name: "I1l.png", url: `${import.meta.env.BASE_URL}samples/reference.png` },
+  deformed: { name: "I2l.png", url: `${import.meta.env.BASE_URL}samples/deformed.png` }
+} as const;
+
 function formatBytes(value: number) {
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(0)} KB`;
   return `${(value / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function DropCard({ image, role, onFile, onRemove }: {
-  image?: InputImage; role: InputImage["role"]; onFile: (file: File) => void; onRemove: () => void;
+function DropCard({ image, role, onFile, onSample, onRemove }: {
+  image?: InputImage; role: InputImage["role"]; onFile: (file: File) => void;
+  onSample: (role: InputImage["role"]) => void; onRemove: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -34,6 +40,10 @@ function DropCard({ image, role, onFile, onRemove }: {
       onDragLeave={() => setDragging(false)}
       onDrop={(event) => {
         event.preventDefault(); setDragging(false);
+        const sampleRole = event.dataTransfer.getData("application/x-hewer-sample");
+        if (sampleRole === "reference" || sampleRole === "deformed") {
+          onSample(sampleRole); return;
+        }
         const file = event.dataTransfer.files[0]; if (file?.type.startsWith("image/")) onFile(file);
       }}
     >
@@ -108,6 +118,17 @@ function App() {
     });
   };
 
+  const loadSample = async (sampleRole: InputImage["role"], targetRole = sampleRole) => {
+    try {
+      const sample = samples[sampleRole];
+      const response = await fetch(sample.url);
+      if (!response.ok) throw new Error(`Sample image unavailable: ${sample.name}`);
+      setImage(targetRole, new File([await response.blob()], sample.name, { type: "image/png" }));
+    } catch (error) {
+      setJob({ id: "", status: "failed", progress: 0, stage: "Sample loading failed", error: String(error) });
+    }
+  };
+
   const setQuality = (quality: Quality) => {
     setSettings((current) => ({ ...current, quality, ...(quality === "custom" ? {} : qualitySettings[quality]) }));
   };
@@ -156,9 +177,20 @@ function App() {
         <div className="input-panel panel">
           <div className="panel-heading"><div><span>INPUT DATA</span><h2>Image pair</h2></div><span className="counter">{Object.keys(images).length}/2</span></div>
           <div className="drop-grid">
-            <DropCard role="reference" image={images.reference} onFile={(f) => setImage("reference", f)} onRemove={() => setImages((v) => ({ ...v, reference: undefined }))} />
+            <DropCard role="reference" image={images.reference} onFile={(f) => setImage("reference", f)} onSample={(role) => void loadSample(role, "reference")} onRemove={() => setImages((v) => ({ ...v, reference: undefined }))} />
             <div className="flow-arrow"><ArrowRight size={20} /></div>
-            <DropCard role="deformed" image={images.deformed} onFile={(f) => setImage("deformed", f)} onRemove={() => setImages((v) => ({ ...v, deformed: undefined }))} />
+            <DropCard role="deformed" image={images.deformed} onFile={(f) => setImage("deformed", f)} onSample={(role) => void loadSample(role, "deformed")} onRemove={() => setImages((v) => ({ ...v, deformed: undefined }))} />
+          </div>
+          <div className="sample-dataset">
+            <div className="sample-heading"><div><span>SAMPLE DATASET</span><p>No images available? Drag the sample frames into the inputs.</p></div>
+              <button onClick={() => { void loadSample("reference"); void loadSample("deformed"); }}>Load image pair</button></div>
+            <div className="sample-list">{(["reference", "deformed"] as const).map((role) =>
+              <button key={role} className="sample-item" draggable
+                onDragStart={(event) => event.dataTransfer.setData("application/x-hewer-sample", role)}
+                onClick={() => void loadSample(role)} title={`Load ${samples[role].name} into ${role} input`}>
+                <img src={samples[role].url} alt={`${role} sample frame`} draggable={false} />
+                <span><strong>{samples[role].name}</strong><small>{role === "reference" ? "Reference / I1" : "Deformed / I2"}</small></span>
+              </button>)}</div>
           </div>
         </div>
 

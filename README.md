@@ -21,6 +21,11 @@ npm run dev
 
 Open `http://localhost:5173` and drop two images into the workbench.
 
+The built-in sample pair is derived from `regul/I1l.png` and `regul/I2l.png`.
+Both images use the identical pixel crop `x=144:513, y=59:427`; only the
+Matplotlib figure margins and axis annotations are removed. The original
+repository images are unchanged.
+
 ## Deployment shape
 
 The Vite frontend can be deployed to Vercel. For a public deployment, set

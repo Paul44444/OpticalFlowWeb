@@ -182,7 +182,7 @@ function App() {
             <DropCard role="deformed" image={images.deformed} onFile={(f) => setImage("deformed", f)} onSample={(role) => void loadSample(role, "deformed")} onRemove={() => setImages((v) => ({ ...v, deformed: undefined }))} />
           </div>
           <div className="sample-dataset">
-            <div className="sample-heading"><div><span>SAMPLE DATASET</span><p>No images available? Drag the sample frames into the inputs.</p></div>
+            <div className="sample-heading"><div><span>SAMPLE DATASET</span><p>Cropped measurement ROI. Click to load or drag into the inputs.</p></div>
               <button onClick={() => { void loadSample("reference"); void loadSample("deformed"); }}>Load image pair</button></div>
             <div className="sample-list">{(["reference", "deformed"] as const).map((role) =>
               <button key={role} className="sample-item" draggable

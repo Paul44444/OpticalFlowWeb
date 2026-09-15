@@ -112,6 +112,22 @@ main { width: min(1440px, calc(100% - 40px)); margin: 0 auto; }
 .progress-track { margin-top: 8px; height: 3px; background: var(--paper-deep); }.progress-track i { display: block; height: 100%; background: var(--signal); transition: width .4s; }
 .job-progress.complete .progress-track i { background: #5fbb52; }.job-progress.failed p { color: #a32b18; line-height: 1.5; }
 
+.archive-section { margin-bottom: 68px; padding: 24px; }
+.archive-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.archive-heading svg { color: var(--signal); }
+.archive-heading h2 { margin: 5px 0; font-size: 21px; font-weight: 600; }
+.archive-heading p, .archive-empty { margin: 0; font-size: 12px; color: var(--muted); }
+.archive-error { font-size: 12px; color: #a32b18; }
+.archive-list { margin-top: 18px; max-height: 390px; overflow-y: auto; border-top: 1px solid var(--line); }
+.archive-item { display: grid; grid-template-columns: 180px minmax(0, 1fr) 105px 20px; align-items: center; gap: 16px; width: 100%; min-height: 62px; padding: 10px 13px; background: transparent; border: 0; border-bottom: 1px solid var(--line); text-align: left; cursor: pointer; }
+.archive-item:hover, .archive-item.active { background: #e6f0f6; }
+.archive-item.active { box-shadow: inset 3px 0 var(--signal); }
+.archive-date, .archive-method { font: 11px "IBM Plex Mono", monospace; color: var(--muted); }
+.archive-files { min-width: 0; display: flex; align-items: center; gap: 9px; font-size: 12px; }
+.archive-files strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.archive-files small, .archive-method small { color: var(--muted); font-weight: 400; }
+.archive-item > svg { color: var(--signal-dark); }
+
 .results-section { padding: 0 0 76px; }
 .results-heading { display: flex; justify-content: space-between; align-items: end; }
 .results-heading h2 { margin: 8px 0 0; font: 600 29px "IBM Plex Sans", sans-serif; }
@@ -137,6 +153,7 @@ footer { border-top: 1px solid var(--line); height: 64px; padding: 0 clamp(20px,
   .workspace-grid { grid-template-columns: 1fr; }.controls { order: 2; }
   .drop-card { height: 260px; }
   .diagnostics { grid-template-columns: 1fr 1fr; }
+  .archive-item { grid-template-columns: 150px minmax(0, 1fr) 80px 16px; gap: 10px; }
 }
 @media (max-width: 600px) {
   .topbar { height: 60px; padding: 0 14px; }.brand em, .system-status strong { display:none; }
@@ -145,6 +162,8 @@ footer { border-top: 1px solid var(--line); height: 64px; padding: 0 clamp(20px,
   .sample-heading { align-items: flex-start; }.sample-heading p { max-width: 210px; }
   .sample-list { grid-template-columns: 1fr; }.sample-item { height: 68px; }.sample-item img { height: 52px; }
   .input-panel, .controls { padding: 16px; }.results-grid { grid-template-columns: 1fr; }.result-visual { min-height: 260px; }
+  .archive-section { padding: 16px; }.archive-item { grid-template-columns: minmax(0, 1fr) 18px; gap: 5px; }
+  .archive-date, .archive-files, .archive-method { grid-column: 1; }.archive-item > svg { grid-column: 2; grid-row: 1 / span 3; }
   .result-tabs { gap: 0; justify-content: space-between; overflow-x:auto; }.diagnostics { grid-template-columns: 1fr; }
   footer { padding: 0 14px; } footer span:last-child { display:none; }
 }

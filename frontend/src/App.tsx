@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, ArrowRight, Check, ChevronDown, Download, Gauge, ImagePlus,
+  Activity, Archive, ArrowRight, Check, ChevronDown, Download, Gauge, ImagePlus,
   LoaderCircle, Maximize2, Play, RefreshCw, Settings2, X
 } from "lucide-react";
-import { createJob, getHealth, getJob } from "./api";
-import type { ComputeSettings, InputImage, JobResult, Quality, Solver } from "./types";
+import { createJob, getArchive, getHealth, getJob } from "./api";
+import type { ArchiveItem, ComputeSettings, InputImage, JobResult, Quality, Solver } from "./types";
 
 const defaultSettings: ComputeSettings = {
   solver: "both", quality: "quick", size: 192, levels: 3, warps: 4,
@@ -110,10 +110,17 @@ function App() {
   const [job, setJob] = useState<JobResult>({ id: "", status: "idle", progress: 0, stage: "Ready" });
   const [tab, setTab] = useState<ResultTab>("Overview");
   const [backend, setBackend] = useState<{ device: "cuda" | "cpu"; gpu_name: string } | null>(null);
+  const [archive, setArchive] = useState<ArchiveItem[]>([]);
+  const [archiveError, setArchiveError] = useState("");
 
   useEffect(() => {
     getHealth().then(({ device, gpu_name }) => setBackend({ device, gpu_name })).catch(() => setBackend(null));
+    getArchive().then(setArchive).catch(() => setArchiveError("Archive unavailable"));
   }, []);
+
+  useEffect(() => {
+    if (job.status === "complete") getArchive().then(setArchive).catch(() => setArchiveError("Archive unavailable"));
+  }, [job.status]);
 
   const filesReady = Boolean(images.reference && images.deformed);
   const busy = ["uploading", "queued", "running"].includes(job.status);
@@ -155,6 +162,18 @@ function App() {
     setJob({ id: "", status: "uploading", progress: 4, stage: "Uploading image pair" });
     try { setJob(await createJob([images.reference.file, images.deformed.file], settings)); }
     catch (error) { setJob({ id: "", status: "failed", progress: 0, stage: "Request failed", error: String(error) }); }
+  };
+
+  const openArchiveJob = async (id: string) => {
+    try {
+      const saved = await getJob(id);
+      setSettings({ ...defaultSettings, ...saved.settings });
+      setJob(saved);
+      setTab("Overview");
+      window.setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 0);
+    } catch {
+      setArchiveError("Could not open archived result");
+    }
   };
 
   const results = job.results ?? {};
@@ -246,7 +265,21 @@ function App() {
         </aside>
       </section>
 
-      <section className="results-section">
+      <section className="archive-section panel">
+        <div className="archive-heading"><div><span className="section-index">SAVED ANALYSES</span><h2>Archive</h2>
+          <p>Results remain on the compute backend. Only metadata is loaded here.</p></div><Archive size={22} /></div>
+        {archiveError && <p className="archive-error">{archiveError}</p>}
+        {!archiveError && archive.length === 0 && <p className="archive-empty">No completed analyses yet.</p>}
+        <div className="archive-list">{archive.map((item) => <button key={item.id}
+          className={`archive-item ${job.id === item.id ? "active" : ""}`}
+          onClick={() => void openArchiveJob(item.id)}>
+          <span className="archive-date">{new Date(item.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}</span>
+          <span className="archive-files"><strong>{item.image1_name}</strong><small>→</small><strong>{item.image2_name}</strong></span>
+          <span className="archive-method">{item.solver.toUpperCase()} <small>· {item.device.toUpperCase()}</small></span>
+          <ArrowRight size={16} /></button>)}</div>
+      </section>
+
+      <section className="results-section" id="results">
         <div className="results-heading"><div><span className="section-index">OUTPUT DATA</span><h2>Computed fields</h2></div>
           {job.status === "complete" && <a className="download-link" href={results.download}><Download size={16}/> Download data</a>}</div>
         <nav className="result-tabs">{resultTabs.map((item) => <button key={item} onClick={() => setTab(item)} className={tab === item ? "active" : ""}>{item}</button>)}</nav>

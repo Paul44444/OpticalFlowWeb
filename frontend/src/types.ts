@@ -36,7 +36,22 @@ export interface JobResult {
   progress: number;
   stage: string;
   device?: "cuda" | "cpu";
+  created_at?: string;
+  completed_at?: string;
+  image1_name?: string;
+  image2_name?: string;
+  settings?: Partial<ComputeSettings>;
   error?: string;
   results?: Record<string, string>;
   metrics?: Record<string, JobMetrics | Record<string, unknown>>;
+}
+
+export interface ArchiveItem {
+  id: string;
+  created_at: string;
+  completed_at?: string;
+  image1_name: string;
+  image2_name: string;
+  solver: Solver;
+  device: string;
 }

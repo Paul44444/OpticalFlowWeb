@@ -1,4 +1,4 @@
-import type { ComputeSettings, JobResult } from "./types";
+import type { ArchiveItem, ComputeSettings, JobResult } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -32,4 +32,11 @@ export async function getJob(id: string): Promise<JobResult> {
   const response = await fetch(`${API_BASE}/api/jobs/${id}`);
   if (!response.ok) throw new Error(await response.text() || "Could not read job");
   return resolveResultUrls(await response.json());
+}
+
+export async function getArchive(): Promise<ArchiveItem[]> {
+  const response = await fetch(`${API_BASE}/api/archive`);
+  if (!response.ok) throw new Error("Could not load archive");
+  const data: { items: ArchiveItem[] } = await response.json();
+  return data.items;
 }

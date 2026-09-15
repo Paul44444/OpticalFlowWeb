@@ -30,6 +30,18 @@ Both images use the identical pixel crop `x=144:513, y=59:427`; only the
 Matplotlib figure margins and axis annotations are removed. The original
 repository images are unchanged.
 
+## Saved analyses
+
+Completed jobs remain under `hewer-web/backend/jobs/<job-id>/`. Each new job
+has a `job.json` manifest with UTC creation/completion timestamps, input names,
+settings, status, and result links. `GET /api/archive` returns metadata for the
+50 newest completed jobs; the frontend loads result images only after a job is
+selected. Existing result directories without a manifest are imported on
+backend startup, using the directory timestamp and generic input names.
+
+The current Quick Tunnel and archive API are public. Do not upload confidential
+images until authentication and access controls are added.
+
 ## Deployment shape
 
 The Vite frontend can be deployed to Vercel. For a public deployment, set

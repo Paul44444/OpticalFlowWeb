@@ -10,6 +10,7 @@ import sys
 import threading
 import uuid
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -37,9 +38,54 @@ jobs_lock = threading.Lock()
 compute_lock = threading.Lock()
 
 
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def save_job(job: dict[str, Any]) -> None:
+    path = JOBS_ROOT / job["id"] / "job.json"
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(job, indent=2), encoding="utf-8")
+    temporary.replace(path)
+
+
+def load_saved_jobs() -> None:
+    for job_root in JOBS_ROOT.iterdir():
+        if not job_root.is_dir() or len(job_root.name) != 32:
+            continue
+        manifest = job_root / "job.json"
+        if manifest.exists():
+            try:
+                job = json.loads(manifest.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                continue
+            if job.get("status") in {"queued", "running", "uploading"}:
+                job.update(status="failed", progress=0, stage="Interrupted by backend restart",
+                           error="The backend restarted during computation")
+                save_job(job)
+        else:
+            output = job_root / "output"
+            metrics_file = output / "metrics.json"
+            if not metrics_file.exists():
+                continue
+            try:
+                metrics = json.loads(metrics_file.read_text(encoding="utf-8"))
+            except (ValueError, OSError):
+                continue
+            created_at = datetime.fromtimestamp(job_root.stat().st_mtime, timezone.utc).isoformat()
+            job = {"id": job_root.name, "status": "complete", "progress": 100,
+                   "stage": "Imported previous computation", "created_at": created_at,
+                   "completed_at": created_at, "image1_name": "Reference frame",
+                   "image2_name": "Deformed frame", "settings": {"solver": "both"},
+                   "metrics": metrics, "results": result_urls(job_root.name, output)}
+            save_job(job)
+        jobs[job_root.name] = job
+
+
 def update_job(job_id: str, **values: Any) -> None:
     with jobs_lock:
         jobs[job_id].update(values)
+        save_job(jobs[job_id])
 
 
 def result_urls(job_id: str, output: Path) -> dict[str, str]:
@@ -92,7 +138,7 @@ def run_job(job_id: str, image1: Path, image2: Path, settings: dict[str, Any]) -
             metrics = json.loads((output / "metrics.json").read_text())
             update_job(
                 job_id, status="complete", progress=100, stage="Computation complete",
-                results=result_urls(job_id, output), metrics=metrics,
+                completed_at=utc_now(), results=result_urls(job_id, output), metrics=metrics,
             )
     except Exception as error:
         update_job(job_id, status="failed", progress=0, stage="Computation failed", error=str(error))
@@ -130,11 +176,32 @@ async def create_job(
         with path.open("wb") as target:
             shutil.copyfileobj(upload.file, target)
         paths.append(path)
-    job = {"id": job_id, "status": "queued", "progress": 8, "stage": "Job accepted"}
+    job = {"id": job_id, "status": "queued", "progress": 8, "stage": "Job accepted",
+           "created_at": utc_now(), "image1_name": image1.filename or "Reference frame",
+           "image2_name": image2.filename or "Deformed frame", "settings": parsed_settings}
     with jobs_lock:
         jobs[job_id] = job
+        save_job(job)
     background_tasks.add_task(run_job, job_id, paths[0], paths[1], parsed_settings)
     return job
+
+
+@app.get("/api/archive")
+def list_archive(limit: int = 50) -> dict[str, Any]:
+    if not 1 <= limit <= 100:
+        raise HTTPException(400, "limit must be between 1 and 100")
+    with jobs_lock:
+        completed = sorted(
+            (job for job in jobs.values() if job.get("status") == "complete"),
+            key=lambda job: job.get("created_at", ""), reverse=True,
+        )[:limit]
+        items = [{"id": job["id"], "created_at": job.get("created_at"),
+                  "completed_at": job.get("completed_at"),
+                  "image1_name": job.get("image1_name"), "image2_name": job.get("image2_name"),
+                  "solver": job.get("settings", {}).get("solver", "both"),
+                  "device": job.get("device", "unknown")}
+                 for job in completed]
+    return {"items": items}
 
 
 @app.get("/api/jobs/{job_id}")
@@ -144,3 +211,6 @@ def get_job(job_id: str) -> dict[str, Any]:
         if job is None:
             raise HTTPException(404, "Unknown job")
         return dict(job)
+
+
+load_saved_jobs()

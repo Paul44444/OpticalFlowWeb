@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Activity, Archive, ArrowRight, Check, ChevronDown, Download, Gauge, ImagePlus,
+  Activity, Archive, ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Download, Gauge, ImagePlus,
   LoaderCircle, Maximize2, Play, RefreshCw, Settings2, X
 } from "lucide-react";
 import { createJob, getArchive, getHealth, getJob } from "./api";
@@ -105,6 +105,7 @@ function ResultImage({ src, title, kicker }: { src?: string; title: string; kick
 
 function App() {
   const [images, setImages] = useState<Partial<Record<InputImage["role"], InputImage>>>({});
+  const [inspectionFrame, setInspectionFrame] = useState<1 | 2>(1);
   const [settings, setSettings] = useState(defaultSettings);
   const [advanced, setAdvanced] = useState(false);
   const [job, setJob] = useState<JobResult>({ id: "", status: "idle", progress: 0, stage: "Ready" });
@@ -121,6 +122,10 @@ function App() {
   useEffect(() => {
     if (job.status === "complete") getArchive().then(setArchive).catch(() => setArchiveError("Archive unavailable"));
   }, [job.status]);
+
+  useEffect(() => {
+    setInspectionFrame(1);
+  }, [images.reference?.id, images.deformed?.id]);
 
   const filesReady = Boolean(images.reference && images.deformed);
   const busy = ["uploading", "queued", "running"].includes(job.status);
@@ -217,6 +222,24 @@ function App() {
             <div className="flow-arrow"><ArrowRight size={20} /></div>
             <DropCard role="deformed" image={images.deformed} onFile={(f) => setImage("deformed", f)} onSample={(role) => void loadSample(role, "deformed")} onRemove={() => setImages((v) => ({ ...v, deformed: undefined }))} />
           </div>
+          {images.reference && images.deformed && <section className="frame-inspector">
+            <div className="inspector-heading">
+              <div><span>FRAME INSPECTION</span><p>Registered view for direct before/after comparison.</p></div>
+              <div className="inspector-controls">
+                <button className="inspector-nav" onClick={() => setInspectionFrame(inspectionFrame === 1 ? 2 : 1)} aria-label="Previous frame"><ChevronLeft size={16} /></button>
+                <div className="inspector-tabs">
+                  <button className={inspectionFrame === 1 ? "active" : ""} onClick={() => setInspectionFrame(1)} aria-pressed={inspectionFrame === 1}>Frame 1</button>
+                  <button className={inspectionFrame === 2 ? "active" : ""} onClick={() => setInspectionFrame(2)} aria-pressed={inspectionFrame === 2}>Frame 2</button>
+                </div>
+                <button className="inspector-nav" onClick={() => setInspectionFrame(inspectionFrame === 1 ? 2 : 1)} aria-label="Next frame"><ChevronRight size={16} /></button>
+              </div>
+            </div>
+            <button className="frame-stage" onClick={() => setInspectionFrame(inspectionFrame === 1 ? 2 : 1)} aria-label={`Show frame ${inspectionFrame === 1 ? 2 : 1}`}>
+              <img src={images.reference.previewUrl} alt="Reference frame" />
+              <img className={`frame-overlay ${inspectionFrame === 2 ? "visible" : ""}`} src={images.deformed.previewUrl} alt="Deformed frame" />
+              <span className="frame-badge">FRAME {inspectionFrame} / {inspectionFrame === 1 ? images.reference.file.name : images.deformed.file.name}</span>
+            </button>
+          </section>}
           <div className="sample-dataset">
             <div className="sample-heading"><div><span>SAMPLE DATASET</span><p>Cropped measurement ROI. Click to load or drag into the inputs.</p></div>
               <button onClick={() => { void loadSample("reference"); void loadSample("deformed"); }}>Load image pair</button></div>

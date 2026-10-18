@@ -119,8 +119,9 @@ def run_job(job_id: str, image1: Path, image2: Path, settings: dict[str, Any]) -
                 "--levels", str(int(settings.get("levels", 3))),
                 "--warps", str(int(settings.get("warps", 4))),
                 "--iterations", str(int(settings.get("iterations", 500))),
-                "--alpha1", str(float(settings.get("alpha1", 0.003))),
-                "--tgv-alpha2", str(float(settings.get("alpha2", 0.006))),
+                "--alpha1", str(float(settings.get("alpha1", 0.03))),
+                "--tgv-alpha2", str(float(settings.get("alpha2", 0.12))),
+                "--data-term", "charbonnier",
                 "--device", compute_device,
             ]
             if not settings.get("phaseInit", True):

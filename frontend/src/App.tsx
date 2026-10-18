@@ -8,7 +8,7 @@ import type { ArchiveItem, ComputeSettings, InputImage, JobResult, Quality, Solv
 
 const defaultSettings: ComputeSettings = {
   solver: "both", quality: "quick", size: 192, levels: 3, warps: 4,
-  iterations: 500, alpha1: 0.003, alpha2: 0.006, phaseInit: true, cropMode: "full"
+  iterations: 500, alpha1: 0.03, alpha2: 0.12, phaseInit: true, cropMode: "full"
 };
 
 const qualitySettings: Record<Exclude<Quality, "custom">, Partial<ComputeSettings>> = {
@@ -263,9 +263,9 @@ function App() {
             onChange={setQuality} />
           <div className="slider-group">
             <span className="slider-group-title">REGULARIZATION / CONVERGENCE</span>
-            <ParameterSlider label="TV weight · α₁" detail="TV + TGV first order" value={settings.alpha1} min={0.0005} max={0.02} step={0.0005}
+            <ParameterSlider label="TV weight · α₁" detail="TV + TGV first order" value={settings.alpha1} min={0.0005} max={0.1} step={0.0005}
               onChange={(alpha1) => setSettings((v) => ({ ...v, quality: "custom", alpha1 }))} />
-            {(settings.solver === "tgv" || settings.solver === "both") && <ParameterSlider label="TGV weight · α₂" detail="TGV second order" value={settings.alpha2} min={0.001} max={0.03} step={0.001}
+            {(settings.solver === "tgv" || settings.solver === "both") && <ParameterSlider label="TGV weight · α₂" detail="TGV second order" value={settings.alpha2} min={0.001} max={0.4} step={0.001}
               onChange={(alpha2) => setSettings((v) => ({ ...v, quality: "custom", alpha2 }))} />}
             <ParameterSlider label="PDHG iterations" detail="Per warp / pyramid level" value={settings.iterations} min={100} max={1000} step={50}
               onChange={(iterations) => setSettings((v) => ({ ...v, quality: "custom", iterations }))} />
